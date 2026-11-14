@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/brandlogo.tsx","./src/components/circuitsectorstab.tsx","./src/components/lappacetab.tsx","./src/components/scheduleview.tsx","./src/components/standingsview.tsx","./src/components/teamassets.tsx","./src/components/telemetrychartstab.tsx","./src/components/tyrestrategytab.tsx","./src/data/f1data.ts"],"version":"5.9.3"}
