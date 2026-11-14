@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, CheckCircle2 } from 'lucide-react';
 import { DRIVERS, DriverInfo, TEAMS, TeamInfo } from '../data/f1Data';
 import { DriverPortrait, TeamCarSide, TeamLogo } from './TeamAssets';
@@ -9,6 +9,8 @@ interface Props {
   onAssignDriver: (slot: 'A' | 'B', code: string) => void;
 }
 
+const CACHE_KEY = 'gen_f1_standings_cache_v1';
+
 export const StandingsView: React.FC<Props> = ({
   driverACode,
   driverBCode,
@@ -17,14 +19,15 @@ export const StandingsView: React.FC<Props> = ({
   const [drivers, setDrivers] = useState<DriverInfo[]>(DRIVERS);
   const [teams, setTeams] = useState<TeamInfo[]>(TEAMS);
   const [syncing, setSyncing] = useState(false);
-  const [syncMessage, setSyncMessage] = useState<string>('已載入 2026 賽季最新積分 (聖保羅站後)');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [syncMessage, setSyncMessage] = useState<string>('正在檢查最新積分...');
 
-  const handleLiveSync = async () => {
+  const handleLiveSync = useCallback(async () => {
     setSyncing(true);
     try {
       const [drvRes, conRes] = await Promise.all([
-        fetch('https://api.jolpi.ca/ergast/f1/2026/driverstandings/?format=json'),
-        fetch('https://api.jolpi.ca/ergast/f1/2026/constructorstandings/?format=json'),
+        fetch('https://api.jolpi.ca/ergast/f1/current/driverstandings/?format=json'),
+        fetch('https://api.jolpi.ca/ergast/f1/current/constructorstandings/?format=json'),
       ]);
 
       if (drvRes.ok && conRes.ok) {
@@ -34,46 +37,61 @@ export const StandingsView: React.FC<Props> = ({
           drvJson?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings ?? [];
         const apiTeams =
           conJson?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings ?? [];
+        const roundNum = drvJson?.MRData?.StandingsTable?.StandingsLists?.[0]?.round;
+
+        let updatedDrivers = DRIVERS;
+        let updatedTeams = TEAMS;
 
         if (apiDrivers.length > 0) {
-          setDrivers((prev) =>
-            prev
-              .map((d) => {
-                const match = apiDrivers.find(
-                  (ad: { Driver?: { code?: string } }) =>
-                    ad.Driver?.code?.toUpperCase() === d.code
-                );
-                if (!match) return d;
-                return {
-                  ...d,
-                  points2026: Number(match.points ?? d.points2026),
-                  rank2026: Number(match.position ?? d.rank2026),
-                  wins2026: Number(match.wins ?? d.wins2026),
-                };
-              })
-              .sort((a, b) => a.rank2026 - b.rank2026)
-          );
+          updatedDrivers = DRIVERS.map((d) => {
+            const match = apiDrivers.find(
+              (ad: { Driver?: { code?: string } }) =>
+                ad.Driver?.code?.toUpperCase() === d.code
+            );
+            if (!match) return d;
+            return {
+              ...d,
+              points2026: Number(match.points ?? d.points2026),
+              rank2026: Number(match.position ?? d.rank2026),
+              wins2026: Number(match.wins ?? d.wins2026),
+            };
+          }).sort((a, b) => a.rank2026 - b.rank2026);
+          setDrivers(updatedDrivers);
         }
 
         if (apiTeams.length > 0) {
-          setTeams((prev) =>
-            prev
-              .map((t) => {
-                const match = apiTeams.find((at: { Constructor?: { name?: string } }) =>
-                  at.Constructor?.name?.toLowerCase().includes(t.name.toLowerCase().split(' ')[0])
-                );
-                if (!match) return t;
-                return {
-                  ...t,
-                  points2026: Number(match.points ?? t.points2026),
-                  rank2026: Number(match.position ?? t.rank2026),
-                };
-              })
-              .sort((a, b) => a.rank2026 - b.rank2026)
-          );
+          updatedTeams = TEAMS.map((t) => {
+            const match = apiTeams.find((at: { Constructor?: { name?: string } }) =>
+              at.Constructor?.name?.toLowerCase().includes(t.name.toLowerCase().split(' ')[0])
+            );
+            if (!match) return t;
+            return {
+              ...t,
+              points2026: Number(match.points ?? t.points2026),
+              rank2026: Number(match.position ?? t.rank2026),
+            };
+          }).sort((a, b) => a.rank2026 - b.rank2026);
+          setTeams(updatedTeams);
         }
 
-        setSyncMessage(`已即時同步官方積分 (${new Date().toLocaleTimeString('zh-TW')})`);
+        const timeStr = new Date().toLocaleTimeString('zh-TW');
+        const roundLabel = roundNum ? `第 ${roundNum} 站後` : '';
+        const msg = `已自動同步官方積分 ${roundLabel}(${timeStr})`;
+        setSyncMessage(msg);
+
+        try {
+          localStorage.setItem(
+            CACHE_KEY,
+            JSON.stringify({
+              drivers: updatedDrivers,
+              teams: updatedTeams,
+              message: msg,
+              ts: Date.now(),
+            })
+          );
+        } catch {
+          // Ignore storage quota errors
+        }
       } else {
         setSyncMessage('目前使用本地最新 2026 賽季積分資料庫');
       }
@@ -82,7 +100,41 @@ export const StandingsView: React.FC<Props> = ({
     } finally {
       setSyncing(false);
     }
-  };
+  }, []);
+
+  // 1. 進入頁面時讀取快取並自動同步最新積分
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.drivers) && Array.isArray(parsed.teams)) {
+          setDrivers(parsed.drivers);
+          setTeams(parsed.teams);
+          if (parsed.message) setSyncMessage(parsed.message);
+        }
+      }
+    } catch {
+      // Ignore invalid cache
+    }
+    handleLiveSync();
+  }, [handleLiveSync]);
+
+  // 2. 開啟自動更新時，每 5 分鐘與切換回分頁時自動同步
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const intervalId = window.setInterval(handleLiveSync, 5 * 60 * 1000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleLiveSync();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [autoRefresh, handleLiveSync]);
 
   const maxTeamPoints = Math.max(...teams.map((t) => t.points2026), 1);
 
@@ -100,15 +152,29 @@ export const StandingsView: React.FC<Props> = ({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleLiveSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#DFD9CE] hover:border-[#1C1917] text-xs font-medium text-[#1C1917] transition-colors cursor-pointer disabled:opacity-60"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-          {syncing ? '同步中...' : '更新即時積分'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setAutoRefresh((v) => !v)}
+            className={`px-3.5 py-2 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+              autoRefresh
+                ? 'bg-[#1B4332] text-white border-[#1B4332]'
+                : 'bg-white text-[#57534E] border-[#DFD9CE] hover:border-[#1C1917]'
+            }`}
+          >
+            {autoRefresh ? '✓ 自動更新：開啟 (每 5 分鐘)' : '自動更新：關閉'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLiveSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#DFD9CE] hover:border-[#1C1917] text-xs font-medium text-[#1C1917] transition-colors cursor-pointer disabled:opacity-60"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? '同步中...' : '立即更新'}
+          </button>
+        </div>
       </div>
 
       {/* Constructors' Championship + Cutout Cars & Logos */}
