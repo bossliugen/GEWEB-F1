@@ -10,16 +10,4 @@
 - **2026 賽程與台灣時間**：24 站完整賽程、圈數、賽道長度，換算為台灣時間 (UTC+8)。
 - **車手積分榜與車隊圖鑑**：2026 即時積分同步、100% 去背車手頭像、車隊 LOGO 與側視賽車圖鑑。
 
-## 部署至 GitHub Pages (`bossliugen/GEWEB-F1`)
-本專案已內建 `.github/workflows/deploy.yml` 與 `vite.config.ts` (`base: './'`)，支援自動部署至 GitHub Pages。
-
-```bash
-git init
-git add .
-git commit -m "feat: build GEN. F1 race data & telemetry web app"
-git branch -M main
-git remote add origin https://github.com/bossliugen/GEWEB-F1.git
-git push -u origin main
-```
-
-推送後至 GitHub Repository 的 **Settings → Pages → Source** 選擇 **GitHub Actions** 即可於 `https://bossliugen.github.io/GEWEB-F1/` 直接瀏覽。
+網站入口 `https://bossliugen.github.io/GEWEB-F1/` 直接瀏覽。
