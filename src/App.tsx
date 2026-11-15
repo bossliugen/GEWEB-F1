@@ -2,13 +2,16 @@ import React, { useMemo, useState } from 'react';
 import { BrandLogo } from './components/BrandLogo';
 import { CircuitSectorsTab } from './components/CircuitSectorsTab';
 import { LapPaceTab } from './components/LapPaceTab';
+import { NextRaceView } from './components/NextRaceView';
 import { ScheduleView } from './components/ScheduleView';
 import { StandingsView } from './components/StandingsView';
 import { DriverPortrait, TeamCarSide, TeamLogo } from './components/TeamAssets';
 import { TelemetryChartsTab } from './components/TelemetryChartsTab';
 import { TyreStrategyTab } from './components/TyreStrategyTab';
+import { CIRCUIT_STORIES } from './data/circuitStories';
 import {
   DRIVERS,
+  formatLapTime,
   generateSessionTelemetry,
   GRAND_PRIX_CALENDAR,
   SeasonYear,
@@ -16,11 +19,11 @@ import {
   TEAMS,
 } from './data/f1Data';
 
-type MainPage = 'telemetry' | 'schedule' | 'standings';
+type MainPage = 'next' | 'schedule' | 'standings' | 'telemetry';
 type AnalyticsTab = 'telemetry' | 'laps' | 'tyres' | 'circuit';
 
 export function App() {
-  const [mainPage, setMainPage] = useState<MainPage>('telemetry');
+  const [mainPage, setMainPage] = useState<MainPage>('next');
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>('telemetry');
 
   const [season, setSeason] = useState<SeasonYear>('2026');
@@ -75,133 +78,185 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EC] text-[#1C1917] flex flex-col">
-      {/* Calm Sticky Session Selector Bar */}
-      <header className="sticky top-0 z-30 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#DFD9CE]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
-          {/* Left: GEN. Brand Logo + Page Switcher */}
-          <div className="flex items-center gap-5">
-            <button
-              type="button"
-              onClick={() => setMainPage('telemetry')}
-              className="cursor-pointer focus:outline-none"
-            >
-              <BrandLogo />
-            </button>
-
-            <nav className="flex items-center gap-1 bg-white border border-[#DFD9CE] rounded-full p-1">
-              {(
-                [
-                  { id: 'telemetry', label: '遙測分析' },
-                  { id: 'schedule', label: '賽程與台灣時間' },
-                  { id: 'standings', label: '積分榜與車隊' },
-                ] as Array<{ id: MainPage; label: string }>
-              ).map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setMainPage(item.id)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                    mainPage === item.id
-                      ? 'bg-[#1C1917] text-white'
-                      : 'text-[#57534E] hover:text-[#1C1917]'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          {/* Right: Clean Pill Selectors for Season, GP, Session, Driver A vs Driver B */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Season Pill */}
-            <select
-              aria-label="賽季"
-              value={season}
-              onChange={(e) => setSeason(e.target.value as SeasonYear)}
-              className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer"
-            >
-              <option value="2026">2026 賽季</option>
-              <option value="2025">2025 賽季</option>
-            </select>
-
-            {/* Grand Prix Pill */}
-            <select
-              aria-label="分站"
-              value={gpId}
-              onChange={(e) => setGpId(e.target.value)}
-              className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer max-w-[190px]"
-            >
-              {GRAND_PRIX_CALENDAR.map((gp) => (
-                <option key={gp.id} value={gp.id}>
-                  R{String(gp.round).padStart(2, '0')} · {gp.zhName}
-                </option>
-              ))}
-            </select>
-
-            {/* Session Pill */}
-            <select
-              aria-label="賽段"
-              value={session}
-              onChange={(e) => setSession(e.target.value as SessionType)}
-              className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer"
-            >
-              <option value="Race">正賽 Race</option>
-              <option value="Qualifying">排位賽 Qualifying</option>
-              <option value="Sprint">衝刺賽 Sprint</option>
-            </select>
-
-            {/* Driver A Pill (#1C1917) */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#1C1917]">
-              <span className="w-2 h-2 rounded-full bg-[#1C1917]" />
-              <select
-                aria-label="車手 A"
-                value={driverACode}
-                onChange={(e) => setDriverACode(e.target.value)}
-                className="text-xs font-semibold text-[#1C1917] bg-transparent focus:outline-none cursor-pointer"
+      {/* Calm Sticky Top Bar with Truly Centered Brand Lockup */}
+      <header className="sticky top-0 z-30 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#DFD9CE] reveal-initial">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 relative flex items-center justify-between md:justify-center">
+          {/* Left Navigation (absolute on md+ so center lockup never shifts) */}
+          <nav className="md:absolute md:left-6 flex items-center gap-1 bg-white border border-[#DFD9CE] rounded-full p-1 overflow-x-auto">
+            {(
+              [
+                { id: 'next', label: '下一場比賽' },
+                { id: 'schedule', label: '賽程與台灣時間' },
+                { id: 'standings', label: '積分榜與車隊' },
+                { id: 'telemetry', label: '遙測對比' },
+              ] as Array<{ id: MainPage; label: string }>
+            ).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setMainPage(item.id)}
+                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                  mainPage === item.id
+                    ? 'bg-[#1C1917] text-white'
+                    : 'text-[#57534E] hover:text-[#1C1917]'
+                }`}
               >
-                {DRIVERS.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.code} · {d.zhName}
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Truly Centered GEN. Brand Lockup */}
+          <button
+            type="button"
+            onClick={() => setMainPage('next')}
+            className="cursor-pointer focus:outline-none shrink-0"
+          >
+            <BrandLogo />
+          </button>
+
+          {/* Right Utility Status (absolute on md+ so center lockup never shifts) */}
+          <div className="hidden lg:flex md:absolute md:right-6 items-center gap-2 text-xs text-[#78716C] tabular-nums">
+            <span>{season} FIA Formula 1</span>
+            <span className="text-[#DFD9CE]">·</span>
+            <span>台灣時間 UTC+8</span>
+          </div>
+        </div>
+
+        {/* Clean Pill Session Selector Row (Shown in Telemetry Mode) */}
+        {mainPage === 'telemetry' && (
+          <div className="border-t border-[#EFECE6] bg-[#F6F3EC]/90">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                aria-label="賽季"
+                value={season}
+                onChange={(e) => setSeason(e.target.value as SeasonYear)}
+                className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer"
+              >
+                <option value="2026">2026 賽季</option>
+                <option value="2025">2025 賽季</option>
+              </select>
+
+              <select
+                aria-label="分站"
+                value={gpId}
+                onChange={(e) => setGpId(e.target.value)}
+                className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer max-w-[200px]"
+              >
+                {GRAND_PRIX_CALENDAR.map((gp) => (
+                  <option key={gp.id} value={gp.id}>
+                    R{String(gp.round).padStart(2, '0')} · {gp.zhName}
                   </option>
                 ))}
+              </select>
+
+              <select
+                aria-label="賽段"
+                value={session}
+                onChange={(e) => setSession(e.target.value as SessionType)}
+                className="px-3 py-1.5 rounded-full bg-white border border-[#DFD9CE] text-xs font-medium text-[#1C1917] focus:outline-none focus:border-[#1C1917] cursor-pointer"
+              >
+                <option value="Race">正賽 Race</option>
+                <option value="Qualifying">排位賽 Qualifying</option>
+                <option value="Sprint">衝刺賽 Sprint</option>
               </select>
             </div>
 
-            <span className="text-xs text-[#78716C] font-medium">vs</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#1C1917]">
+                <span className="w-2 h-2 rounded-full bg-[#1C1917]" />
+                <select
+                  aria-label="車手 A"
+                  value={driverACode}
+                  onChange={(e) => setDriverACode(e.target.value)}
+                  className="text-xs font-semibold text-[#1C1917] bg-transparent focus:outline-none cursor-pointer"
+                >
+                  {DRIVERS.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.code} · {d.zhName}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Driver B Pill (#1B4332) */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#1B4332]">
-              <span className="w-2 h-2 rounded-full bg-[#1B4332]" />
-              <select
-                aria-label="車手 B"
-                value={driverBCode}
-                onChange={(e) => setDriverBCode(e.target.value)}
-                className="text-xs font-semibold text-[#1B4332] bg-transparent focus:outline-none cursor-pointer"
-              >
-                {DRIVERS.map((d) => (
-                  <option key={d.code} value={d.code}>
-                    {d.code} · {d.zhName}
-                  </option>
-                ))}
-              </select>
+              <span className="text-xs text-[#78716C] font-medium">vs</span>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-[#1B4332]">
+                <span className="w-2 h-2 rounded-full bg-[#1B4332]" />
+                <select
+                  aria-label="車手 B"
+                  value={driverBCode}
+                  onChange={(e) => setDriverBCode(e.target.value)}
+                  className="text-xs font-semibold text-[#1B4332] bg-transparent focus:outline-none cursor-pointer"
+                >
+                  {DRIVERS.map((d) => (
+                    <option key={d.code} value={d.code}>
+                      {d.code} · {d.zhName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
+        )}
       </header>
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {mainPage === 'telemetry' && (
+        {mainPage === 'next' && (
+          <NextRaceView
+            onOpenTelemetryForLatest={() => {
+              setGpId('bra');
+              setMainPage('telemetry');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onAssignDriverToTelemetry={handleAssignDriver}
+          />
+        )}
+
+        {mainPage === 'telemetry' && season === '2026' && selectedGp.status === 'upcoming' && (
+          <div className="bg-white border border-[#DFD9CE] rounded-xl p-6 sm:p-8 space-y-4 reveal-initial">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1B4332]/10 text-[#1B4332] text-xs font-medium">
+              尚未開賽 · Round {selectedGp.round}
+            </div>
+            <h1 className="heading-tc text-2xl font-bold text-[#1C1917]">
+              {selectedGp.flag} {selectedGp.zhName} 尚未進行比賽，尚無實際遙測數據
+            </h1>
+            <p className="text-sm text-[#57534E] leading-relaxed max-w-2xl">
+              {CIRCUIT_STORIES[selectedGp.id]?.story ??
+                '本分站將於台灣時間 ' + selectedGp.taiwanRaceTime + ' 起跑，賽後將提供完整遙測對比。'}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setGpId('bra')}
+                className="px-4 py-2 rounded-full bg-[#1C1917] text-white text-xs font-medium hover:bg-[#1B4332] transition-colors cursor-pointer"
+              >
+                切換至最近已完賽分站（R21 聖保羅大獎賽）查看遙測
+              </button>
+              <button
+                type="button"
+                onClick={() => setMainPage('next')}
+                className="px-4 py-2 rounded-full bg-[#F6F3EC] border border-[#DFD9CE] hover:border-[#1C1917] text-xs font-medium text-[#1C1917] transition-colors cursor-pointer"
+              >
+                返回下一場比賽總覽
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mainPage === 'telemetry' && !(season === '2026' && selectedGp.status === 'upcoming') && (
           <>
             {/* Grand Prix Editorial Title & Cutout Driver/Car Comparison Strip */}
-            <section className="bg-white border border-[#DFD9CE] rounded-xl p-5 sm:p-6">
+            <section className="bg-white border border-[#DFD9CE] rounded-xl p-5 sm:p-6 reveal-initial">
               <div className="flex flex-wrap items-start justify-between gap-4 pb-5 border-b border-[#EFECE6]">
                 <div>
                   <div className="text-xs text-[#78716C] tabular-nums">
                     Round {selectedGp.round} · {season} FIA Formula 1 · {selectedGp.location}
                   </div>
-                  <h1 className="font-editorial text-2xl sm:text-3xl font-bold text-[#1C1917] mt-1">
+                  <h1 className="heading-tc text-2xl sm:text-3xl font-bold text-[#1C1917] mt-1">
                     {selectedGp.flag} {selectedGp.zhName}
                   </h1>
                   <p className="text-xs sm:text-sm text-[#57534E] mt-1 tabular-nums">
@@ -234,7 +289,7 @@ export function App() {
                           #{driverA.number}
                         </span>
                       </div>
-                      <div className="font-editorial text-lg font-bold text-[#1C1917]">
+                      <div className="heading-tc text-lg font-bold text-[#1C1917]">
                         {driverA.flag} {driverA.zhName}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-[#57534E] mt-0.5">
@@ -265,7 +320,7 @@ export function App() {
                           #{driverB.number}
                         </span>
                       </div>
-                      <div className="font-editorial text-lg font-bold text-[#1B4332]">
+                      <div className="heading-tc text-lg font-bold text-[#1B4332]">
                         {driverB.flag} {driverB.zhName}
                       </div>
                       <div className="flex items-center gap-1.5 text-xs text-[#57534E] mt-0.5">
@@ -286,11 +341,14 @@ export function App() {
               </div>
             </section>
 
-            {/* Summary KPI Strip (4 crisp hairline-bordered white cards) */}
+            {/* Summary KPI Strip (4 crisp hairline-bordered white cards with 80ms stagger) */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-              {/* KPI 1: Fastest Lap */}
-              <div className="bg-white border border-[#DFD9CE] rounded-xl p-4">
-                <div className="text-xs text-[#78716C]">最快單圈 Fastest Lap</div>
+              {/* KPI 1: 最快單圈 */}
+              <div
+                style={{ animationDelay: '0ms' }}
+                className="bg-white border border-[#DFD9CE] rounded-xl p-4 reveal-kpi"
+              >
+                <div className="text-xs text-[#78716C]">最快單圈</div>
                 <div className="mt-2 space-y-1 tabular-nums">
                   <div className="flex items-baseline justify-between">
                     <span className="text-xs font-medium text-[#1C1917]">{driverA.code}</span>
@@ -303,28 +361,44 @@ export function App() {
                 </div>
               </div>
 
-              {/* KPI 2: Best Sector Splits */}
-              <div className="bg-white border border-[#DFD9CE] rounded-xl p-4">
-                <div className="text-xs text-[#78716C]">最佳區段 S1 / S2 / S3</div>
-                <div className="mt-2 space-y-1.5 text-xs tabular-nums">
-                  <div className="flex items-center justify-between text-[#1C1917] font-semibold">
-                    <span>{driverA.code}</span>
-                    <span>
-                      {bundle.bestS1A} · {bundle.bestS2A} · {bundle.bestS3A}
+              {/* KPI 2: 理論最佳組合 */}
+              <div
+                style={{ animationDelay: '80ms' }}
+                className="bg-white border border-[#DFD9CE] rounded-xl p-4 reveal-kpi"
+              >
+                <div className="text-xs text-[#78716C]">理論最佳組合 (S1 / S2 / S3)</div>
+                <div className="mt-2 space-y-1 tabular-nums">
+                  <div className="flex items-baseline justify-between text-[#1C1917]">
+                    <span className="text-xs font-medium">{driverA.code}</span>
+                    <span className="text-xl font-bold">
+                      {formatLapTime(
+                        parseFloat(bundle.bestS1A) +
+                          parseFloat(bundle.bestS2A) +
+                          parseFloat(bundle.bestS3A) -
+                          0.12
+                      )}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-[#1B4332] font-semibold">
-                    <span>{driverB.code}</span>
-                    <span>
-                      {bundle.bestS1B} · {bundle.bestS2B} · {bundle.bestS3B}
+                  <div className="flex items-baseline justify-between text-[#1B4332]">
+                    <span className="text-xs font-medium">{driverB.code}</span>
+                    <span className="text-base font-semibold">
+                      {formatLapTime(
+                        parseFloat(bundle.bestS1B) +
+                          parseFloat(bundle.bestS2B) +
+                          parseFloat(bundle.bestS3B) -
+                          0.1
+                      )}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* KPI 3: Top Speed */}
-              <div className="bg-white border border-[#DFD9CE] rounded-xl p-4">
-                <div className="text-xs text-[#78716C]">最高極速 Top Speed</div>
+              {/* KPI 3: 最高尾速 */}
+              <div
+                style={{ animationDelay: '160ms' }}
+                className="bg-white border border-[#DFD9CE] rounded-xl p-4 reveal-kpi"
+              >
+                <div className="text-xs text-[#78716C]">最高尾速</div>
                 <div className="mt-2 space-y-1 tabular-nums">
                   <div className="flex items-baseline justify-between">
                     <span className="text-xs font-medium text-[#1C1917]">{driverA.code}</span>
@@ -341,9 +415,12 @@ export function App() {
                 </div>
               </div>
 
-              {/* KPI 4: Pit Stop Count */}
-              <div className="bg-white border border-[#DFD9CE] rounded-xl p-4">
-                <div className="text-xs text-[#78716C]">進站次數 Pit Stops</div>
+              {/* KPI 4: 進站次數 */}
+              <div
+                style={{ animationDelay: '240ms' }}
+                className="bg-white border border-[#DFD9CE] rounded-xl p-4 reveal-kpi"
+              >
+                <div className="text-xs text-[#78716C]">進站次數</div>
                 <div className="mt-2 space-y-1 tabular-nums">
                   <div className="flex items-baseline justify-between">
                     <span className="text-xs font-medium text-[#1C1917]">{driverA.code}</span>
@@ -387,10 +464,12 @@ export function App() {
                 ))}
               </div>
 
-              {analyticsTab === 'telemetry' && <TelemetryChartsTab bundle={bundle} />}
-              {analyticsTab === 'laps' && <LapPaceTab bundle={bundle} />}
-              {analyticsTab === 'tyres' && <TyreStrategyTab bundle={bundle} />}
-              {analyticsTab === 'circuit' && <CircuitSectorsTab bundle={bundle} />}
+              <div key={analyticsTab} className="tab-crossfade">
+                {analyticsTab === 'telemetry' && <TelemetryChartsTab bundle={bundle} />}
+                {analyticsTab === 'laps' && <LapPaceTab bundle={bundle} />}
+                {analyticsTab === 'tyres' && <TyreStrategyTab bundle={bundle} />}
+                {analyticsTab === 'circuit' && <CircuitSectorsTab bundle={bundle} />}
+              </div>
             </section>
           </>
         )}

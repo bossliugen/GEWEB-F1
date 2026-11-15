@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SessionTelemetryBundle } from '../data/f1Data';
+import { ScrollReveal } from './ScrollReveal';
 
 interface Props {
   bundle: SessionTelemetryBundle;
@@ -46,7 +47,8 @@ export const TelemetryChartsTab: React.FC<Props> = ({ bundle }) => {
     const ticks = [minVal, (minVal + maxVal) / 2, maxVal];
 
     return (
-      <div className="bg-white border border-[#DFD9CE] rounded-xl p-4 sm:p-5">
+      <ScrollReveal>
+        <div className="bg-white border border-[#DFD9CE] rounded-xl p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div className="flex items-baseline gap-2">
             <h3 className="text-sm font-semibold text-[#1C1917]">{title}</h3>
@@ -137,6 +139,7 @@ export const TelemetryChartsTab: React.FC<Props> = ({ bundle }) => {
             strokeLinecap="round"
             strokeLinejoin="round"
             opacity="0.88"
+            className="line-draw"
           />
 
           {/* Driver A Trace */}
@@ -147,6 +150,7 @@ export const TelemetryChartsTab: React.FC<Props> = ({ bundle }) => {
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="line-draw"
           />
 
           {/* Synchronized Crosshair */}
@@ -181,6 +185,7 @@ export const TelemetryChartsTab: React.FC<Props> = ({ bundle }) => {
           )}
         </svg>
       </div>
+      </ScrollReveal>
     );
   };
 
@@ -188,7 +193,7 @@ export const TelemetryChartsTab: React.FC<Props> = ({ bundle }) => {
   const deltaMax = Math.max(0.35, ...pts.map((p) => p.deltaSec));
 
   return (
-    <div className="space-y-4 animate-fade-up">
+    <div className="space-y-4 tab-crossfade">
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-[#57534E]">
         <span>移動滑鼠至任一圖表可同步檢視距離點遙測數據與彎道時間差。</span>
         <div className="flex items-center gap-4">

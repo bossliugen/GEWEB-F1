@@ -83,7 +83,7 @@ export const CircuitSectorsTab: React.FC<Props> = ({ bundle }) => {
   const bWinsCount = bundle.miniSectors.length - aWinsCount;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 animate-fade-up">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 tab-crossfade">
       {/* 2D SVG Circuit Map */}
       <div className="lg:col-span-7 bg-white border border-[#DFD9CE] rounded-xl p-5 flex flex-col justify-between">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">

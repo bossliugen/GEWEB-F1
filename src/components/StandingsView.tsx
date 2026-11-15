@@ -143,7 +143,7 @@ export const StandingsView: React.FC<Props> = ({
       {/* Header & Live Sync */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-editorial text-2xl font-bold text-[#1C1917]">
+          <h2 className="heading-tc text-2xl font-bold text-[#1C1917]">
             2026 車手積分榜與車隊排行榜
           </h2>
           <p className="text-sm text-[#57534E] mt-1 flex items-center gap-1.5">
@@ -180,7 +180,7 @@ export const StandingsView: React.FC<Props> = ({
       {/* Constructors' Championship + Cutout Cars & Logos */}
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h3 className="font-editorial text-lg font-bold text-[#1C1917]">
+          <h3 className="heading-tc text-lg font-bold text-[#1C1917]">
             車隊排行榜與 2026 賽車圖鑑 (完全去背)
           </h3>
           <span className="text-xs text-[#78716C]">共 11 支車隊</span>
@@ -245,7 +245,7 @@ export const StandingsView: React.FC<Props> = ({
       {/* Drivers' Championship + Cutout Portraits */}
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h3 className="font-editorial text-lg font-bold text-[#1C1917]">
+          <h3 className="heading-tc text-lg font-bold text-[#1C1917]">
             車手即時積分榜 (點擊可設為遙測對比車手 A / B)
           </h3>
           <span className="text-xs text-[#78716C]">2026 賽季積分</span>

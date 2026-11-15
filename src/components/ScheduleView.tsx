@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Calendar, Clock, Flag, MapPin, ArrowUpRight } from 'lucide-react';
+import { Calendar, CalendarPlus, Clock, Download, Flag, MapPin, ArrowUpRight } from 'lucide-react';
+import { CIRCUIT_STORIES } from '../data/circuitStories';
 import { GRAND_PRIX_CALENDAR, GrandPrixInfo } from '../data/f1Data';
+import { buildGoogleCalendarUrl, downloadIcsEvent } from '../utils/calendar';
 
 interface Props {
   selectedGpId: string;
@@ -26,7 +28,7 @@ export const ScheduleView: React.FC<Props> = ({
     <div className="space-y-5 animate-fade-up">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-editorial text-2xl font-bold text-[#1C1917]">
+          <h2 className="heading-tc text-2xl font-bold text-[#1C1917]">
             2026 F1 賽程表與台灣比賽時段
           </h2>
           <p className="text-sm text-[#57534E] mt-1">
@@ -97,7 +99,7 @@ export const ScheduleView: React.FC<Props> = ({
 
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-editorial text-lg font-bold text-[#1C1917] leading-snug">
+                    <h3 className="heading-tc text-lg font-bold text-[#1C1917] leading-snug">
                       {gp.flag} {gp.zhName}
                     </h3>
                     <div className="text-xs text-[#57534E] mt-1 flex items-center gap-1">
@@ -124,6 +126,13 @@ export const ScheduleView: React.FC<Props> = ({
                     />
                   </svg>
                 </div>
+
+                {/* Circuit Story Snippet */}
+                {CIRCUIT_STORIES[gp.id] && (
+                  <p className="mt-3 pt-3 border-t border-[#EFECE6] text-xs text-[#57534E] leading-relaxed line-clamp-3">
+                    {CIRCUIT_STORIES[gp.id].story}
+                  </p>
+                )}
 
                 {/* Circuit & Taiwan Time Details */}
                 <div className="mt-4 pt-3 border-t border-[#EFECE6] space-y-1.5 text-xs tabular-nums">
@@ -162,26 +171,43 @@ export const ScheduleView: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[#EFECE6] flex items-center justify-between gap-2">
-                {gp.winnerCode ? (
-                  <div className="text-xs text-[#57534E] tabular-nums">
-                    冠軍：<strong className="text-[#1C1917]">{gp.winnerCode}</strong>{' '}
-                    <span className="text-[#78716C]">({gp.winnerTeam})</span>
-                  </div>
+              <div className="mt-4 pt-3 border-t border-[#EFECE6] flex flex-wrap items-center justify-between gap-2">
+                {gp.status === 'completed' ? (
+                  <>
+                    <div className="text-xs text-[#57534E] tabular-nums">
+                      冠軍：<strong className="text-[#1C1917]">{gp.winnerCode}</strong>{' '}
+                      <span className="text-[#78716C]">({gp.winnerTeam})</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onSelectGpForTelemetry(gp.id)}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#1C1917] hover:text-[#1B4332] cursor-pointer transition-colors"
+                    >
+                      查看遙測
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  </>
                 ) : (
-                  <div className="text-xs text-[#1B4332] font-medium">
-                    賽前預覽與模擬遙測可用
+                  <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+                    <a
+                      href={buildGoogleCalendarUrl(gp, 'race')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#1B4332] hover:underline"
+                    >
+                      <CalendarPlus className="w-3.5 h-3.5" />
+                      Google 行事曆
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => downloadIcsEvent(gp, 'race')}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[#1C1917] hover:text-[#1B4332] cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      下載 .ics
+                    </button>
                   </div>
                 )}
-
-                <button
-                  type="button"
-                  onClick={() => onSelectGpForTelemetry(gp.id)}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-[#1C1917] hover:text-[#1B4332] cursor-pointer transition-colors"
-                >
-                  遙測分析
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
               </div>
             </div>
           );

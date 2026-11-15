@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatLapTime, SessionTelemetryBundle } from '../data/f1Data';
+import { ScrollReveal } from './ScrollReveal';
 
 interface Props {
   bundle: SessionTelemetryBundle;
@@ -53,8 +54,9 @@ export const LapPaceTab: React.FC<Props> = ({ bundle }) => {
   const yTicks = [minT, (minT + maxT) / 2, maxT];
 
   return (
-    <div className="space-y-4 animate-fade-up">
-      <div className="bg-white border border-[#DFD9CE] rounded-xl p-5">
+    <div className="space-y-4 tab-crossfade">
+      <ScrollReveal>
+        <div className="bg-white border border-[#DFD9CE] rounded-xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <h3 className="text-base font-semibold text-[#1C1917]">
@@ -160,7 +162,7 @@ export const LapPaceTab: React.FC<Props> = ({ bundle }) => {
             ))}
 
           {/* Driver B Line + Dots */}
-          <path d={pathB} fill="none" stroke="#1B4332" strokeWidth="1.6" opacity="0.85" />
+          <path d={pathB} fill="none" stroke="#1B4332" strokeWidth="1.6" opacity="0.85" className="line-draw" />
           {laps.map((l) => {
             const val = fuelCorrected ? l.fuelCorrectedB : l.timeB;
             if (!val) return null;
@@ -178,7 +180,7 @@ export const LapPaceTab: React.FC<Props> = ({ bundle }) => {
           })}
 
           {/* Driver A Line + Dots */}
-          <path d={pathA} fill="none" stroke="#1C1917" strokeWidth="1.8" />
+          <path d={pathA} fill="none" stroke="#1C1917" strokeWidth="1.8" className="line-draw" />
           {laps.map((l) => {
             const val = fuelCorrected ? l.fuelCorrectedA : l.timeA;
             if (!val) return null;
@@ -207,7 +209,8 @@ export const LapPaceTab: React.FC<Props> = ({ bundle }) => {
             />
           )}
         </svg>
-      </div>
+        </div>
+      </ScrollReveal>
     </div>
   );
 };

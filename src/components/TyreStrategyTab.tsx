@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatLapTime, SessionTelemetryBundle, TyreCompound, TyreStint } from '../data/f1Data';
+import { ScrollReveal } from './ScrollReveal';
 
 interface Props {
   bundle: SessionTelemetryBundle;
@@ -125,9 +126,10 @@ export const TyreStrategyTab: React.FC<Props> = ({ bundle }) => {
     .join(' ');
 
   return (
-    <div className="space-y-4 animate-fade-up">
+    <div className="space-y-4 tab-crossfade">
       {/* Tyre Stint Timeline */}
-      <div className="bg-white border border-[#DFD9CE] rounded-xl p-5 space-y-5">
+      <ScrollReveal>
+        <div className="bg-white border border-[#DFD9CE] rounded-xl p-5 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h3 className="text-base font-semibold text-[#1C1917]">
@@ -162,10 +164,12 @@ export const TyreStrategyTab: React.FC<Props> = ({ bundle }) => {
           '#1B4332',
           bundle.stintsB
         )}
-      </div>
+        </div>
+      </ScrollReveal>
 
       {/* Stint Degradation Curve */}
-      <div className="bg-white border border-[#DFD9CE] rounded-xl p-5">
+      <ScrollReveal delayMs={80}>
+        <div className="bg-white border border-[#DFD9CE] rounded-xl p-5">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <div>
             <h3 className="text-base font-semibold text-[#1C1917]">
@@ -219,10 +223,11 @@ export const TyreStrategyTab: React.FC<Props> = ({ bundle }) => {
             </text>
           ))}
 
-          <path d={pathDegB} fill="none" stroke="#1B4332" strokeWidth="2" strokeDasharray="5 3" />
-          <path d={pathDegA} fill="none" stroke="#1C1917" strokeWidth="2.2" />
+          <path d={pathDegB} fill="none" stroke="#1B4332" strokeWidth="2" strokeDasharray="5 3" className="line-draw" />
+          <path d={pathDegA} fill="none" stroke="#1C1917" strokeWidth="2.2" className="line-draw" />
         </svg>
-      </div>
+        </div>
+      </ScrollReveal>
     </div>
   );
 };
