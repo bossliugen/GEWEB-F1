@@ -78,48 +78,88 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EC] text-[#1C1917] flex flex-col">
-      {/* Calm Sticky Top Bar with Truly Centered Brand Lockup */}
+      {/* Calm Sticky Top Bar (64px) with GEN. Brand Link & Cross-Site Switcher */}
       <header className="sticky top-0 z-30 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#DFD9CE] reveal-initial">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 relative flex items-center justify-between md:justify-center">
-          {/* Left Navigation (absolute on md+ so center lockup never shifts) */}
-          <nav className="md:absolute md:left-6 flex items-center gap-1 bg-white border border-[#DFD9CE] rounded-full p-1 overflow-x-auto">
-            {(
-              [
-                { id: 'next', label: '下一場比賽' },
-                { id: 'schedule', label: '賽程與台灣時間' },
-                { id: 'standings', label: '積分榜與車隊' },
-                { id: 'telemetry', label: '遙測對比' },
-              ] as Array<{ id: MainPage; label: string }>
-            ).map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setMainPage(item.id)}
-                className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                  mainPage === item.id
-                    ? 'bg-[#1C1917] text-white'
-                    : 'text-[#57534E] hover:text-[#1C1917]'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+          {/* Left: GEN. Brand Lockup (Links back to GENWeb Portal) + Domain Index */}
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href="https://bossliugen.github.io/GENWeb/"
+              className="inline-flex items-center focus:outline-none hover:opacity-85 transition-opacity"
+              title="返回 HIBOSS GEN. 總門戶"
+            >
+              <BrandLogo />
+            </a>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium text-[#57534E] tabular-nums pl-2 border-l border-[#DFD9CE]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9E3B33]" />
+              02 / F1 TELEMETRY
+            </span>
+          </div>
 
-          {/* Truly Centered GEN. Brand Lockup */}
-          <button
-            type="button"
-            onClick={() => setMainPage('next')}
-            className="cursor-pointer focus:outline-none shrink-0"
+          {/* Right: Cross-Site Switcher */}
+          <nav
+            aria-label="跨站切換"
+            className="flex items-center gap-1.5 overflow-x-auto py-1"
           >
-            <BrandLogo />
-          </button>
+            <a
+              href="https://bossliugen.github.io/GENWeb/"
+              className="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-white border border-[#DFD9CE] text-[#57534E] hover:border-[#1C1917] hover:text-[#1C1917] transition-colors"
+            >
+              總門戶
+            </a>
+            <a
+              href="https://bossliugen.github.io/Used_Cars9918/"
+              className="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-white border border-[#DFD9CE] text-[#57534E] hover:border-[#1C1917] hover:text-[#1C1917] transition-colors"
+            >
+              中古車庫
+            </a>
+            <a
+              href="https://bossliugen.github.io/block_Tracking/"
+              className="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-white border border-[#DFD9CE] text-[#57534E] hover:border-[#1C1917] hover:text-[#1C1917] transition-colors"
+            >
+              鏈上監測
+            </a>
+            <span
+              aria-current="page"
+              className="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-[#1C1917] text-white"
+            >
+              F1 遙測
+            </span>
+          </nav>
+        </div>
 
-          {/* Right Utility Status (absolute on md+ so center lockup never shifts) */}
-          <div className="hidden lg:flex md:absolute md:right-6 items-center gap-2 text-xs text-[#78716C] tabular-nums">
-            <span>{season} FIA Formula 1</span>
-            <span className="text-[#DFD9CE]">·</span>
-            <span>台灣時間 UTC+8</span>
+        {/* Sub-Bar: F1 Section Navigation */}
+        <div className="border-t border-[#EFECE6] bg-[#F6F3EC]/90">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
+            <nav className="flex items-center gap-1 bg-white border border-[#DFD9CE] rounded-full p-1 overflow-x-auto">
+              {(
+                [
+                  { id: 'next', label: '下一場比賽' },
+                  { id: 'schedule', label: '賽程與台灣時間' },
+                  { id: 'standings', label: '積分榜與車隊' },
+                  { id: 'telemetry', label: '遙測對比' },
+                ] as Array<{ id: MainPage; label: string }>
+              ).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setMainPage(item.id)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors cursor-pointer ${
+                    mainPage === item.id
+                      ? 'bg-[#1C1917] text-white'
+                      : 'text-[#57534E] hover:text-[#1C1917]'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+
+            <div className="hidden md:flex items-center gap-2 text-xs text-[#78716C] tabular-nums">
+              <span>{season} FIA Formula 1</span>
+              <span className="text-[#DFD9CE]">·</span>
+              <span>台灣時間 UTC+8</span>
+            </div>
           </div>
         </div>
 
@@ -488,12 +528,68 @@ export function App() {
             onAssignDriver={handleAssignDriver}
           />
         )}
+        {/* Grand Prix Post-Race Media Funnel (IG & YouTube) */}
+        <section className="bg-white border border-[#DFD9CE] rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-[11px] font-medium text-[#9E3B33] tabular-nums">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#9E3B33]" />
+              LOG 02 // 賽道數據室
+            </div>
+            <h3 className="heading-tc text-base font-bold text-[#1C1917]">
+              大獎賽賽後復盤影音與數據圖卡
+            </h3>
+            <p className="text-xs text-[#57534E]">
+              每站正賽結束後同步更新工程復盤短片與雙車手關鍵時差圖卡（搭配單圈 Delta 實測）。
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href="https://www.youtube.com/@hibossgen"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-full bg-[#1C1917] text-white text-xs font-medium hover:bg-[#1B4332] transition-colors"
+            >
+              YouTube 復盤短片
+            </a>
+            <a
+              href="https://www.instagram.com/hiboss.gen/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 rounded-full bg-[#F6F3EC] border border-[#DFD9CE] hover:border-[#1C1917] text-xs font-medium text-[#1C1917] transition-colors"
+            >
+              Instagram 數據圖卡 (@hiboss.gen)
+            </a>
+          </div>
+        </section>
       </main>
 
-      <footer className="border-t border-[#DFD9CE] py-5 mt-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 text-xs text-[#78716C]">
-          <span>GEN. Formula 1 Race Data & Telemetry · 台灣時間 (UTC+8)</span>
-          <span>GitHub Pages Ready · bossliugen / GEWEB F1</span>
+      <footer className="border-t border-[#DFD9CE] py-5 mt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 text-xs text-[#78716C]">
+          <span>© 2026 HIBOSS GEN. · 台灣</span>
+          <div className="flex items-center gap-5">
+            <a
+              href="https://www.youtube.com/@hibossgen"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#1C1917] transition-colors"
+            >
+              YouTube
+            </a>
+            <a
+              href="https://www.instagram.com/hiboss.gen/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-[#1C1917] transition-colors"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://bossliugen.github.io/GENWeb/"
+              className="hover:text-[#1C1917] transition-colors"
+            >
+              總門戶
+            </a>
+          </div>
         </div>
       </footer>
     </div>

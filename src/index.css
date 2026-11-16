@@ -32,6 +32,7 @@
 }
 
 .tabular-nums {
+  font-family: 'IBM Plex Mono', 'Inter', 'Noto Sans TC', monospace;
   font-variant-numeric: tabular-nums;
 }
 
